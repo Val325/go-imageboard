@@ -61,7 +61,9 @@ func getPostByID(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "post not found"})
 }
 
-func app(c *gin.Context) {
+func startpage(c *gin.Context) {
+	var page = 1
+
 	posts = nil
 	db, err := sql.Open("sqlite3", "./posts.db")
 	if err != nil {
@@ -90,7 +92,44 @@ func app(c *gin.Context) {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	c.HTML(http.StatusOK, "all-posts.tmpl", posts)
+	c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+}
+
+func app(c *gin.Context) {
+	page, err_page := strconv.Atoi(c.Param("page"))
+	if err_page != nil {
+		log.Fatal(err_page)
+	}
+
+	posts = nil
+	db, err := sql.Open("sqlite3", "./posts.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT id, title, post, time FROM posts;")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var title string
+		var post string
+		var time string
+		err = rows.Scan(&id, &title, &post, &time)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var newPost Post
+		newPost = Post{ID: id, Title: title, Post: post, Time: time}
+		posts = append(posts, newPost)
+	}
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
 }
 
 func main() {
@@ -117,7 +156,8 @@ func main() {
 	router.Static("/static", "./static")
 	router.LoadHTMLGlob("template/*")
 
-	router.GET("/", app)
+	router.GET("/", startpage)
+	router.GET("/:page", app)
 	router.GET("/api/posts", getPosts)
 	router.POST("/api/posts", postPosts)
 	router.GET("/api/posts/:id", getPostByID)
