@@ -93,3 +93,39 @@ textarea{
   width: 50%;
   margin-left : 25%
 }
+
+.pagination {
+    display: flex;
+    flex-direction: row;
+    padding: 1.5%;
+    justify-content: flex-start;
+}
+.pagination > a {
+    width: 10%;
+}
+a {
+    text-decoration: none; /* no underline */
+}
+.page{
+    border-radius: 4px;
+    background-color: maroon;
+    border: none;
+    color: #FFFFFF;
+    text-align: center;
+    font-size: 24px;
+	padding: 1.5%;
+    margin: 1.5%;
+}
+.page:hover{
+    border-radius: 4px;
+    background-color: #A52A2A;
+    border: none;
+    color: #FFFFFF;
+    text-align: center;
+    font-size: 24px;
+	padding: 1.5%;
+    margin: 1.5%;
+}
+.page > span{
+    color: #FFFFFF;
+}

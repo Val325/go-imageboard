@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -92,7 +93,15 @@ func startpage(c *gin.Context) {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+	//fmt.Print("len: ", len(posts), "\n")
+	//nums_page := CalculatePages(len(posts), 5)
+	//fmt.Print("amount pages: ", nums_page, "\n")
+
+	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+	c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+		"posts":      posts[(page*5)-5 : page*5],
+		"nums_pages": CalculateRangeArray(1, 6),
+	})
 }
 
 func app(c *gin.Context) {
@@ -129,7 +138,14 @@ func app(c *gin.Context) {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+	//fmt.Print("len: ", len(posts), "\n")
+	//nums_page := CalculatePages(len(posts), 5)
+	//fmt.Print("amount pages: ", nums_page, "\n")
+	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+	c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+		"posts":      posts[(page*5)-5 : page*5],
+		"nums_pages": CalculateRangeArray(1, 6),
+	})
 }
 
 func main() {

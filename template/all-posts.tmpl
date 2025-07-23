@@ -3,6 +3,7 @@
 <head>
 <title>Page Title</title>
 <link rel="stylesheet" href="/static/css/style.css">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body>
 
@@ -19,12 +20,20 @@
     <input type="submit" class="button" value="Post">
 </form> 
 
-{{range .}}
+{{range .posts}}
     <div class="post">
         <span>id:{{.ID}} {{.Title}} {{.Time}}</span>
         <p>{{.Post}}</p>
     </div>
 {{end}}
 
+<div class="pagination">
+    {{range .nums_pages}}
+        <a href="/{{.}}"><div class="page">
+            <span> Page {{.}}</span>
+        </div>
+        </a>
+    {{end}}
+</div>
 </body>
 </html> 
