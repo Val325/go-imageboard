@@ -1,5 +1,7 @@
 package main
 
+import "strconv"
+
 func CalculatePages(all_posts int, pages_per_posts int) int {
 	if all_posts%pages_per_posts == 0 {
 		return all_posts / pages_per_posts
@@ -13,4 +15,9 @@ func CalculateRangeArray(start int, end int) []int {
 		indexes = append(indexes, j)
 	}
 	return indexes
+}
+
+func isNumeric(s string) bool {
+	_, err := strconv.ParseFloat(s, 64)
+	return err == nil
 }

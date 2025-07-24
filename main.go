@@ -19,6 +19,9 @@ type Post struct {
 	Time  string `json:"time"`
 }
 
+var postsPerPage = 5
+var pagesPagination = 5
+
 // Save to DB
 var posts = []Post{}
 
@@ -64,7 +67,6 @@ func getPostByID(c *gin.Context) {
 
 func startpage(c *gin.Context) {
 	var page = 1
-
 	posts = nil
 	db, err := sql.Open("sqlite3", "./posts.db")
 	if err != nil {
@@ -75,7 +77,7 @@ func startpage(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//SELECT MAX(id) FROM posts;
 	defer rows.Close()
 	for rows.Next() {
 		var id int
@@ -93,21 +95,78 @@ func startpage(c *gin.Context) {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	var idMax int
+	var idMin int
+	//var remainderPosts int
+	var isIsExist bool
+	err_exist := db.QueryRow("SELECT EXISTS(SELECT MAX(id) FROM posts);").Scan(&isIsExist)
+	if err_exist != nil {
+		log.Fatal(err_exist)
+	}
+
 	//fmt.Print("len: ", len(posts), "\n")
 	//nums_page := CalculatePages(len(posts), 5)
 	//fmt.Print("amount pages: ", nums_page, "\n")
-
 	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
-	c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
-		"posts":      posts[(page*5)-5 : page*5],
-		"nums_pages": CalculateRangeArray(1, 6),
-	})
+	if isIsExist == false {
+		page = 0
+		postsPerPage = 0
+		pagesPagination = 0
+
+		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+			"posts":      posts[(page*postsPerPage)-postsPerPage : page*postsPerPage],
+			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+		})
+	} else {
+		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		if err_max != nil {
+			log.Fatal(err_max)
+		}
+		err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		if err_min != nil {
+			log.Fatal(err_min)
+		}
+		//remainderPosts = idMax % 5
+		//fmt.Println("id max: ", idMax, "\n")
+		//fmt.Println("id min: ", idMin, "\n")
+		//fmt.Println("page: ", page, "\n")
+		//fmt.Println("postsPerPage: ", postsPerPage, "\n")
+		//fmt.Println("remainder posts: ", 5-remainderPosts, "\n")
+		pagesPagination := CalculatePages(len(posts), 5)
+		if page > pagesPagination {
+			page = pagesPagination
+		}
+		if page <= 0 {
+			page = 1
+		}
+
+		var pagesMax int
+		pagesMax = (page * postsPerPage)
+		if (page * postsPerPage) > len(posts) {
+			pagesMax = len(posts)
+		}
+		//(page * postsPerPage)
+		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+			"posts":      posts[(page*5)-postsPerPage : pagesMax],
+			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+		})
+	}
+
 }
 
 func app(c *gin.Context) {
-	page, err_page := strconv.Atoi(c.Param("page"))
-	if err_page != nil {
-		log.Fatal(err_page)
+	var page int
+
+	if isNumeric(c.Param("page")) {
+		var pageNum int
+		pageNum, err_page := strconv.Atoi(c.Param("page"))
+		if err_page != nil {
+			log.Fatal(err_page)
+		}
+		page = pageNum
+	} else {
+		page = 1
 	}
 
 	posts = nil
@@ -120,7 +179,7 @@ func app(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//SELECT MAX(id) FROM posts;
 	defer rows.Close()
 	for rows.Next() {
 		var id int
@@ -138,14 +197,63 @@ func app(c *gin.Context) {
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
 	}
+
+	var idMax int
+	var idMin int
+	//var remainderPosts int
+	var isIsExist bool
+	err_exist := db.QueryRow("SELECT EXISTS(SELECT MAX(id) FROM posts);").Scan(&isIsExist)
+	if err_exist != nil {
+		log.Fatal(err_exist)
+	}
+
 	//fmt.Print("len: ", len(posts), "\n")
 	//nums_page := CalculatePages(len(posts), 5)
 	//fmt.Print("amount pages: ", nums_page, "\n")
 	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
-	c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
-		"posts":      posts[(page*5)-5 : page*5],
-		"nums_pages": CalculateRangeArray(1, 6),
-	})
+	if isIsExist == false {
+		page = 0
+		postsPerPage = 0
+		pagesPagination = 0
+
+		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+			"posts":      posts[(page*postsPerPage)-postsPerPage : page*postsPerPage],
+			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+		})
+	} else {
+		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		if err_max != nil {
+			log.Fatal(err_max)
+		}
+		err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		if err_min != nil {
+			log.Fatal(err_min)
+		}
+		//remainderPosts = idMax % 5
+		//fmt.Println("id max: ", idMax, "\n")
+		//fmt.Println("id min: ", idMin, "\n")
+		//fmt.Println("page: ", page, "\n")
+		//fmt.Println("postsPerPage: ", postsPerPage, "\n")
+		//fmt.Println("remainder posts: ", 5-remainderPosts, "\n")
+		pagesPagination := CalculatePages(len(posts), 5)
+		if page > pagesPagination {
+			page = pagesPagination
+		}
+		if page <= 0 {
+			page = 1
+		}
+
+		var pagesMax int
+		pagesMax = (page * postsPerPage)
+		if (page * postsPerPage) > len(posts) {
+			pagesMax = len(posts)
+		}
+		//(page * postsPerPage)
+		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
+			"posts":      posts[(page*5)-postsPerPage : pagesMax],
+			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+		})
+	}
 }
 
 func main() {
