@@ -4,6 +4,7 @@
 <title>Page Title</title>
 <link rel="stylesheet" href="/static/css/style.css">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
 </head>
 <body>
 
@@ -17,9 +18,11 @@
     <input class="send" type="text" name="title"><br>
     <label>Post:</label><br>
     <textarea class="send" type="text" name="post"></textarea><br>
-    <input type="submit" class="button" value="Post">
+    <div class="buttons">
+        <input type="submit" class="button" value="Post">
+        <a class="button" href="/{{.page}}">Update page!</a>
+    </div>
 </form> 
-
 {{range .posts}}
     <div class="post">
         <span>id:{{.ID}} {{.Title}} {{.Time}}</span>

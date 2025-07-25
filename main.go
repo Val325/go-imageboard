@@ -21,12 +21,15 @@ type Post struct {
 
 var postsPerPage = 5
 var pagesPagination = 5
+var maxPage = 10
 
 // Save to DB
 var posts = []Post{}
 
 func getPosts(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, posts)
+	c.Redirect(http.StatusMovedPermanently, "/")
+
 }
 
 func postPosts(c *gin.Context) {
@@ -49,6 +52,24 @@ func postPosts(c *gin.Context) {
 		log.Fatal(err)
 	}
 	log.Println("New user inserted successfully")
+
+	var idMax int
+	err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+	if err_max != nil {
+		log.Fatal(err_max)
+	}
+	if idMax >= maxPage*postsPerPage {
+		//delete min posts
+		var idMin int
+		err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		if err_min != nil {
+			log.Fatal(err_min)
+		}
+		_, err = db.Exec("DELETE FROM posts WHERE id = ?;", idMin)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	c.IndentedJSON(http.StatusCreated, posts)
 }
@@ -105,10 +126,6 @@ func startpage(c *gin.Context) {
 		log.Fatal(err_exist)
 	}
 
-	//fmt.Print("len: ", len(posts), "\n")
-	//nums_page := CalculatePages(len(posts), 5)
-	//fmt.Print("amount pages: ", nums_page, "\n")
-	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
 	if isIsExist == false {
 		page = 0
 		postsPerPage = 0
@@ -117,6 +134,7 @@ func startpage(c *gin.Context) {
 		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
 			"posts":      posts[(page*postsPerPage)-postsPerPage : page*postsPerPage],
 			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+			"page":       page,
 		})
 	} else {
 		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
@@ -150,7 +168,9 @@ func startpage(c *gin.Context) {
 		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
 			"posts":      posts[(page*5)-postsPerPage : pagesMax],
 			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+			"page":       page,
 		})
+
 	}
 
 }
@@ -219,6 +239,7 @@ func app(c *gin.Context) {
 		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
 			"posts":      posts[(page*postsPerPage)-postsPerPage : page*postsPerPage],
 			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+			"page":       page,
 		})
 	} else {
 		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
@@ -252,8 +273,10 @@ func app(c *gin.Context) {
 		c.HTML(http.StatusOK, "all-posts.tmpl", gin.H{
 			"posts":      posts[(page*5)-postsPerPage : pagesMax],
 			"nums_pages": CalculateRangeArray(1, pagesPagination+1),
+			"page":       page,
 		})
 	}
+
 }
 
 func main() {
