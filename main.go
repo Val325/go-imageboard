@@ -123,9 +123,11 @@ func startpage(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		var newPost Post
-		newPost = Post{ID: id, Title: title, Post: post, Time: time}
-		posts = append(posts, newPost)
+		if isMain == 1 {
+			var newPost Post
+			newPost = Post{ID: id, Title: title, Post: post, Time: time}
+			posts = append(posts, newPost)
+		}
 	}
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
@@ -231,10 +233,11 @@ func app(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		var newPost Post
-		newPost = Post{ID: id, Title: title, Post: post, Time: time}
-		posts = append(posts, newPost)
+		if isMain == 1 {
+			var newPost Post
+			newPost = Post{ID: id, Title: title, Post: post, Time: time}
+			posts = append(posts, newPost)
+		}
 	}
 	if err = rows.Err(); err != nil {
 		log.Fatal(err)
@@ -311,6 +314,12 @@ func postSubPosts(c *gin.Context) {
 		log.Fatal(err_post)
 	}
 
+	var newPost Post
+
+	if err := c.ShouldBind(&newPost); err != nil {
+		return
+	}
+
 	//add to DB
 	db, err := sql.Open("sqlite3", "./posts.db")
 	dt := time.Now()
@@ -320,7 +329,53 @@ func postSubPosts(c *gin.Context) {
 	defer db.Close()
 
 	_, err = db.Exec("INSERT INTO posts(mainpost, isMain, title, post, time) VALUES(?, ?, ?, ?, ?)", postsNum, 0, c.Request.PostForm["title"][0], c.Request.PostForm["post"][0], dt.Format("01-02-2006 15:04:05"))
+	c.IndentedJSON(http.StatusCreated, posts)
+}
 
+func showSubPosts(c *gin.Context) {
+	var postsNum int
+	postsNum, err_post := strconv.Atoi(c.Param("id"))
+	if err_post != nil {
+		log.Fatal(err_post)
+	}
+	posts = nil
+	//add to DB
+	db, err := sql.Open("sqlite3", "./posts.db")
+	//	dt := time.Now()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	rows, err := db.Query("SELECT id, mainpost, isMain, title, post, time FROM posts WHERE mainpost = ?;", postsNum)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var mainpost int
+		var isMain int
+		var title string
+		var post string
+		var time string
+
+		err = rows.Scan(&id, &mainpost, &isMain, &title, &post, &time)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if isMain == 0 && mainpost == postsNum {
+			var newPost Post
+			newPost = Post{ID: id, Title: title, Post: post, Time: time}
+			posts = append(posts, newPost)
+		}
+	}
+	if err = rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	c.HTML(http.StatusOK, "sub-posts.tmpl", gin.H{
+		"posts":   posts,
+		"postnum": postsNum,
+	})
 }
 
 func main() {
@@ -351,6 +406,7 @@ func main() {
 
 	router.GET("/", startpage)
 	router.GET("/:page", app)
+	router.GET("/subpost/:id", showSubPosts)
 	router.GET("/api/posts", getPosts)
 	router.POST("/api/posts", postPosts)
 	router.POST("/api/posts/:id", postSubPosts)
