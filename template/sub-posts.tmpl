@@ -1,0 +1,33 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+</head>
+<body>
+
+<div class="header">
+  <h1>Dashboard</h1>
+</div>
+
+<iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>
+<form class="form" action="/api/posts/{{.postnum}}" enctype="application/json" method="post" target="dummyframe">
+    <label>Topic:</label><br>
+    <input class="send" type="text" name="title"><br>
+    <label>Post:</label><br>
+    <textarea class="send" type="text" name="post"></textarea><br>
+    <div class="buttons">
+        <input type="submit" class="button" value="Post">
+        <a class="button" href="/{{.page}}">Update page!</a>
+    </div>
+</form> 
+{{range .posts}}
+    <div class="post">
+        <span>id:{{.ID}} {{.Title}} {{.Time}}</span>
+        <p>{{.Post}}</p>
+    </div>
+{{end}}
+</body>
+</html> 

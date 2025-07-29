@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -32,6 +33,16 @@ func getPosts(c *gin.Context) {
 
 }
 
+/*
+	    CREATE TABLE IF NOT EXISTS posts (
+	        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+			mainpost INTEGER,
+			isMain INTEGER,
+	        title TEXT,
+			post TEXT,
+			time TEXT
+	    );
+*/
 func postPosts(c *gin.Context) {
 	var newPost Post
 
@@ -47,7 +58,7 @@ func postPosts(c *gin.Context) {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("INSERT INTO posts(title, post, time) VALUES(?, ?, ?)", c.Request.PostForm["title"][0], c.Request.PostForm["post"][0], dt.Format("01-02-2006 15:04:05"))
+	_, err = db.Exec("INSERT INTO posts(mainpost, isMain, title, post, time) VALUES(?, ?, ?, ?, ?)", 0, 1, c.Request.PostForm["title"][0], c.Request.PostForm["post"][0], dt.Format("01-02-2006 15:04:05"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,7 +105,7 @@ func startpage(c *gin.Context) {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT id, title, post, time FROM posts;")
+	rows, err := db.Query("SELECT id, mainpost, isMain, title, post, time FROM posts;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -102,10 +113,13 @@ func startpage(c *gin.Context) {
 	defer rows.Close()
 	for rows.Next() {
 		var id int
+		var mainpost int
+		var isMain int
 		var title string
 		var post string
 		var time string
-		err = rows.Scan(&id, &title, &post, &time)
+
+		err = rows.Scan(&id, &mainpost, &isMain, &title, &post, &time)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -121,11 +135,11 @@ func startpage(c *gin.Context) {
 	var idMin int
 	//var remainderPosts int
 	var isIsExist bool
-	err_exist := db.QueryRow("SELECT EXISTS(SELECT MAX(id) FROM posts);").Scan(&isIsExist)
+	err_exist := db.QueryRow("SELECT EXISTS(SELECT MIN(id) FROM posts);").Scan(&isIsExist)
 	if err_exist != nil {
 		log.Fatal(err_exist)
 	}
-
+	fmt.Print("isExist: ", isIsExist, "\n")
 	if isIsExist == false {
 		page = 0
 		postsPerPage = 0
@@ -137,14 +151,18 @@ func startpage(c *gin.Context) {
 			"page":       page,
 		})
 	} else {
-		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
-		if err_max != nil {
-			log.Fatal(err_max)
-		}
-		err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
-		if err_min != nil {
-			log.Fatal(err_min)
-		}
+		//err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		//if err_max != nil {
+		//	log.Fatal(err_max)
+		//}
+		fmt.Print("MAX(id): ", idMax, "\n")
+		//err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		//if err_min != nil {
+		//	log.Fatal(err_min)
+		//}
+		fmt.Print("MIN(id): ", idMin, "\n")
 		//remainderPosts = idMax % 5
 		//fmt.Println("id max: ", idMax, "\n")
 		//fmt.Println("id min: ", idMin, "\n")
@@ -195,7 +213,7 @@ func app(c *gin.Context) {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT id, title, post, time FROM posts;")
+	rows, err := db.Query("SELECT id, mainpost, isMain, title, post, time FROM posts;")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,13 +221,17 @@ func app(c *gin.Context) {
 	defer rows.Close()
 	for rows.Next() {
 		var id int
+		var mainpost int
+		var isMain int
 		var title string
 		var post string
 		var time string
-		err = rows.Scan(&id, &title, &post, &time)
+
+		err = rows.Scan(&id, &mainpost, &isMain, &title, &post, &time)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		var newPost Post
 		newPost = Post{ID: id, Title: title, Post: post, Time: time}
 		posts = append(posts, newPost)
@@ -222,7 +244,7 @@ func app(c *gin.Context) {
 	var idMin int
 	//var remainderPosts int
 	var isIsExist bool
-	err_exist := db.QueryRow("SELECT EXISTS(SELECT MAX(id) FROM posts);").Scan(&isIsExist)
+	err_exist := db.QueryRow("SELECT EXISTS(SELECT MIN(id) FROM posts);").Scan(&isIsExist)
 	if err_exist != nil {
 		log.Fatal(err_exist)
 	}
@@ -231,6 +253,7 @@ func app(c *gin.Context) {
 	//nums_page := CalculatePages(len(posts), 5)
 	//fmt.Print("amount pages: ", nums_page, "\n")
 	//c.HTML(http.StatusOK, "all-posts.tmpl", posts[(page*5)-5:page*5])
+	fmt.Print("isExist: ", isIsExist, "\n")
 	if isIsExist == false {
 		page = 0
 		postsPerPage = 0
@@ -242,14 +265,16 @@ func app(c *gin.Context) {
 			"page":       page,
 		})
 	} else {
-		err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
-		if err_max != nil {
-			log.Fatal(err_max)
-		}
-		err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
-		if err_min != nil {
-			log.Fatal(err_min)
-		}
+		db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		//err_max := db.QueryRow("SELECT MAX(id) FROM posts;").Scan(&idMax)
+		//if err_max != nil {
+		//	log.Fatal(err_max)
+		//}
+		//err_min := db.QueryRow("SELECT MIN(id) FROM posts;").Scan(&idMin)
+		//if err_min != nil {
+		//	log.Fatal(err_min)
+		//}
 		//remainderPosts = idMax % 5
 		//fmt.Println("id max: ", idMax, "\n")
 		//fmt.Println("id min: ", idMin, "\n")
@@ -279,6 +304,25 @@ func app(c *gin.Context) {
 
 }
 
+func postSubPosts(c *gin.Context) {
+	var postsNum int
+	postsNum, err_post := strconv.Atoi(c.Param("id"))
+	if err_post != nil {
+		log.Fatal(err_post)
+	}
+
+	//add to DB
+	db, err := sql.Open("sqlite3", "./posts.db")
+	dt := time.Now()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	_, err = db.Exec("INSERT INTO posts(mainpost, isMain, title, post, time) VALUES(?, ?, ?, ?, ?)", postsNum, 0, c.Request.PostForm["title"][0], c.Request.PostForm["post"][0], dt.Format("01-02-2006 15:04:05"))
+
+}
+
 func main() {
 	db, err := sql.Open("sqlite3", "./posts.db")
 	if err != nil {
@@ -288,6 +332,8 @@ func main() {
 	sqlStmt := `
     CREATE TABLE IF NOT EXISTS posts (
         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+		mainpost INTEGER,
+		isMain INTEGER,	
         title TEXT,
 		post TEXT,
 		time TEXT
@@ -307,6 +353,7 @@ func main() {
 	router.GET("/:page", app)
 	router.GET("/api/posts", getPosts)
 	router.POST("/api/posts", postPosts)
+	router.POST("/api/posts/:id", postSubPosts)
 	router.GET("/api/posts/:id", getPostByID)
 
 	router.Run("localhost:8080")

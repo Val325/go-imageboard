@@ -130,3 +130,12 @@ a {
 .page > span{
     color: #FFFFFF;
 }
+
+@media (max-width: 800px) {
+  .pagination {
+    flex-wrap: wrap;
+  }
+  .pagination > a {
+    width: 30%;
+  }
+}
