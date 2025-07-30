@@ -13,11 +13,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Post struct {
+type PostSub struct {
 	ID    int    `json:"id"`
 	Title string `json:"title"`
 	Post  string `json:"post"`
 	Time  string `json:"time"`
+}
+
+type Post struct {
+	ID       int     `json:"id"`
+	Title    string  `json:"title"`
+	Post     string  `json:"post"`
+	SubPost1 PostSub `json:"post"`
+	SubPost2 PostSub `json:"post"`
+	Time     string  `json:"time"`
 }
 
 var postsPerPage = 5
@@ -195,6 +204,39 @@ func startpage(c *gin.Context) {
 
 }
 
+func getSubPostsAdd(mainpost int) []PostSub {
+	db, err := sql.Open("sqlite3", "./posts.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var SubPosts []PostSub = nil
+	rowsSub, errSub := db.Query("SELECT id, mainpost, isMain, title, post, time FROM posts WHERE isMain = 0 AND mainpost = ?;", mainpost)
+	if errSub != nil {
+		log.Fatal(errSub)
+	}
+	defer rowsSub.Close()
+	for rowsSub.Next() {
+		var id int
+		var mainpost int
+		var isMain int
+		var title string
+		var post string
+		var time string
+
+		err = rowsSub.Scan(&id, &mainpost, &isMain, &title, &post, &time)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var newPost PostSub
+		newPost = PostSub{ID: id, Title: title, Post: post, Time: time}
+		SubPosts = append(SubPosts, newPost)
+
+	}
+	return SubPosts
+}
+
 func app(c *gin.Context) {
 	var page int
 
@@ -234,9 +276,23 @@ func app(c *gin.Context) {
 			log.Fatal(err)
 		}
 		if isMain == 1 {
-			var newPost Post
-			newPost = Post{ID: id, Title: title, Post: post, Time: time}
-			posts = append(posts, newPost)
+			var subPosts []PostSub = getSubPostsAdd(id)
+			fmt.Print("len subPosts: ", len(subPosts), "\n")
+			if len(subPosts) >= 2 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, SubPost1: subPosts[0], SubPost2: subPosts[1], Time: time}
+				posts = append(posts, newPost)
+			}
+			if len(subPosts) == 1 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, SubPost1: subPosts[0], Time: time}
+				posts = append(posts, newPost)
+			}
+			if len(subPosts) == 0 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, Time: time}
+				posts = append(posts, newPost)
+			}
 		}
 	}
 	if err = rows.Err(); err != nil {

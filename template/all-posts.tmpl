@@ -27,6 +27,11 @@
     <div class="post">
         <span>id:{{.ID}} {{.Title}} {{.Time}}</span>
         <p>{{.Post}}</p>
+
+        <p>subpost1: {{.SubPost1.Post}}</p>
+        <p>subpost2: {{.SubPost2.Post}}</p>
+
+        <a href="/subpost/{{.ID}}">show</a>
     </div>
 {{end}}
 
