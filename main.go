@@ -133,9 +133,26 @@ func startpage(c *gin.Context) {
 			log.Fatal(err)
 		}
 		if isMain == 1 {
-			var newPost Post
-			newPost = Post{ID: id, Title: title, Post: post, Time: time}
-			posts = append(posts, newPost)
+			//			var newPost Post
+			//			newPost = Post{ID: id, Title: title, Post: post, Time: time}
+			//			posts = append(posts, newPost)
+			var subPosts []PostSub = getSubPostsAdd(id)
+			fmt.Print("len subPosts: ", len(subPosts), "\n")
+			if len(subPosts) >= 2 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, SubPost1: subPosts[0], SubPost2: subPosts[1], Time: time}
+				posts = append(posts, newPost)
+			}
+			if len(subPosts) == 1 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, SubPost1: subPosts[0], Time: time}
+				posts = append(posts, newPost)
+			}
+			if len(subPosts) == 0 {
+				var newPost Post
+				newPost = Post{ID: id, Title: title, Post: post, Time: time}
+				posts = append(posts, newPost)
+			}
 		}
 	}
 	if err = rows.Err(); err != nil {

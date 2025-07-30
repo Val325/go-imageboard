@@ -27,12 +27,21 @@
     <div class="post">
         <span>id:{{.ID}} {{.Title}} {{.Time}}</span>
         <p>{{.Post}}</p>
-
-        <p>subpost1: {{.SubPost1.Post}}</p>
-        <p>subpost2: {{.SubPost2.Post}}</p>
-
         <a href="/subpost/{{.ID}}">show</a>
     </div>
+        {{if .SubPost1.Post}}
+            <div class="post-sub">
+                <span>id:{{.SubPost1.ID}} {{.SubPost1.Title}} {{.SubPost1.Time}}</span>
+                <p>{{.SubPost1.Post}}</p>
+            </div>
+        {{end}}
+
+        {{if .SubPost2.Post}}
+            <div class="post-sub">
+                <span>id:{{.SubPost2.ID}} {{.SubPost2.Title}} {{.SubPost2.Time}}</span>
+                <p>{{.SubPost2.Post}}</p>
+            </div>
+        {{end}}
 {{end}}
 
 <div class="pagination">
